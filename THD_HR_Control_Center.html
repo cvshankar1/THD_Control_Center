@@ -1,0 +1,1033 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>THD HR Control Center</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #f8fafc;
+    --white: #ffffff;
+    --navy: #0f172a;
+    --blue: #3b82f6;
+    --dark-blue: #1d4ed8;
+    --purple: #8b5cf6;
+    --amber: #f59e0b;
+    --green: #10b981;
+    --red: #ef4444;
+    --orange: #f97316;
+    --gray: #64748b;
+    --gray-light: #94a3b8;
+    --gray-bg: #f1f5f9;
+    --border: #f1f5f9;
+    --text: #374151;
+    --radius: 12px;
+    --radius-lg: 16px;
+    --shadow: 0 1px 4px rgba(0,0,0,.06);
+    --shadow-md: 0 4px 16px rgba(0,0,0,.10);
+  }
+
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--navy); min-height: 100vh; }
+
+  /* SIDEBAR */
+  #sidebar {
+    width: 220px; min-height: 100vh; background: var(--navy);
+    display: flex; flex-direction: column; padding: 0 0 24px;
+    position: fixed; top: 0; left: 0; z-index: 100;
+    box-shadow: 2px 0 12px rgba(0,0,0,.2);
+  }
+  .sidebar-logo { padding: 28px 20px 24px; border-bottom: 1px solid rgba(255,255,255,.08); }
+  .sidebar-logo .title { font-size: 22px; font-weight: 700; color: #fff; letter-spacing: -0.5px; }
+  .sidebar-logo .title span { color: var(--orange); }
+  .sidebar-logo .sub { font-size: 11px; color: var(--gray); margin-top: 2px; letter-spacing: .05em; text-transform: uppercase; }
+  nav { flex: 1; padding: 12px 10px; }
+  .nav-btn {
+    display: flex; align-items: center; gap: 10px; width: 100%;
+    padding: 10px 12px; border-radius: 10px; border: none; cursor: pointer;
+    background: transparent; color: var(--gray-light);
+    font-family: inherit; font-size: 14px; font-weight: 400;
+    margin-bottom: 2px; transition: all .15s; text-align: left;
+  }
+  .nav-btn:hover { background: rgba(255,255,255,.06); color: #cbd5e1; }
+  .nav-btn.active { background: rgba(249,115,22,.15); color: var(--orange); font-weight: 600; }
+  .nav-btn .icon { font-size: 16px; width: 20px; text-align: center; }
+  .sidebar-footer { margin: 0 12px; padding: 12px 14px; border-top: 1px solid rgba(255,255,255,.06); }
+  .sidebar-footer .sf-label { font-size: 11px; color: var(--gray); }
+  .sidebar-footer .sf-version { font-size: 10px; color: #334155; margin-top: 3px; }
+
+  /* MAIN */
+  #main { margin-left: 220px; padding: 32px 32px 60px; }
+
+  /* PAGES */
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* TYPOGRAPHY */
+  h1 { font-size: 22px; font-weight: 700; color: var(--navy); }
+  .page-sub { color: var(--gray); font-size: 13px; margin-top: 4px; margin-bottom: 24px; }
+
+  /* STAT CARDS */
+  .stats-row { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 28px; }
+  .stat-card {
+    background: var(--white); border-radius: var(--radius-lg); padding: 20px 22px;
+    border: 1px solid var(--border); flex: 1; min-width: 150px;
+  }
+  .stat-card .inner { display: flex; justify-content: space-between; align-items: flex-start; }
+  .stat-card .label { font-size: 12px; color: var(--gray); font-weight: 500; margin-bottom: 6px; }
+  .stat-card .value { font-size: 30px; font-weight: 700; color: var(--navy); }
+  .stat-card .sub-text { font-size: 11px; color: var(--gray-light); margin-top: 4px; }
+  .stat-card .emoji { font-size: 26px; opacity: .6; }
+
+  /* CARD */
+  .card { background: var(--white); border-radius: var(--radius-lg); padding: 24px; border: 1px solid var(--border); }
+
+  /* BUTTONS */
+  .btn { padding: 9px 18px; border-radius: 10px; border: none; cursor: pointer; font-weight: 600; font-family: inherit; font-size: 13px; transition: opacity .15s; color: #fff; }
+  .btn:hover { opacity: .88; }
+  .btn-orange { background: var(--orange); }
+  .btn-blue { background: var(--dark-blue); }
+  .btn-sm { font-size: 12px; padding: 5px 12px; }
+  .btn-full { width: 100%; margin-top: 8px; }
+  .icon-btn { background: transparent; border: none; border-radius: 8px; padding: 5px 8px; cursor: pointer; font-size: 14px; }
+
+  /* FILTER TABS */
+  .filter-row { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
+  .filter-btn {
+    padding: 6px 14px; border-radius: 99px; border: 1px solid var(--gray-bg);
+    background: var(--white); color: var(--gray);
+    font-size: 13px; cursor: pointer; font-family: inherit; transition: all .15s;
+  }
+  .filter-btn.active { border-color: var(--orange); background: #fff7ed; color: var(--orange); font-weight: 600; }
+
+  /* SECTION HEADER */
+  .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+
+  /* JOB GRID */
+  .jobs-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px,1fr)); gap: 16px; }
+  .job-card {
+    background: var(--white); border-radius: var(--radius-lg); padding: 20px;
+    border: 1px solid var(--border); border-left-width: 4px;
+    transition: transform .15s;
+  }
+  .job-card:hover { transform: translateY(-2px); }
+  .job-card .jc-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+  .job-card .jc-title { font-size: 15px; font-weight: 600; color: var(--navy); line-height: 1.4; }
+  .job-card .jc-dept { font-size: 13px; color: var(--gray); margin-bottom: 8px; }
+  .job-card .jc-desc { font-size: 12px; color: var(--gray-light); margin-bottom: 12px; line-height: 1.5; }
+  .job-card .jc-footer { display: flex; justify-content: space-between; align-items: center; }
+  .job-card .jc-count { font-size: 13px; color: var(--blue); font-weight: 500; }
+  .job-card .jc-actions { display: flex; gap: 6px; }
+  .job-card .jc-date { font-size: 11px; color: var(--gray-light); margin-top: 4px; }
+
+  /* BADGES */
+  .badge { padding: 2px 9px; border-radius: 99px; font-size: 11px; font-weight: 600; flex-shrink: 0; display: inline-block; }
+  .badge-green { background: #dcfce7; color: #16a34a; }
+  .badge-yellow { background: #fef9c3; color: #ca8a04; }
+  .badge-gray { background: var(--gray-bg); color: var(--gray); }
+  .badge-blue { background: #eff6ff; color: var(--blue); }
+  .badge-purple { background: #f5f3ff; color: var(--purple); }
+  .badge-amber { background: #fffbeb; color: var(--amber); }
+  .badge-emerald { background: #ecfdf5; color: var(--green); }
+
+  /* CANDIDATES */
+  .candidates-layout { display: flex; gap: 20px; }
+  .candidates-list { flex: 1; }
+  .candidates-detail { width: 270px; flex-shrink: 0; }
+  .search-input { width: 100%; padding: 9px 12px; border: 1px solid #e2e8f0; border-radius: 10px; font-size: 13px; font-family: inherit; margin-bottom: 16px; outline: none; background: var(--white); color: var(--navy); }
+  .candidate-row {
+    background: var(--white); border-radius: 14px; padding: 14px 18px;
+    border: 1px solid var(--border); cursor: pointer;
+    display: flex; align-items: center; gap: 14px;
+    transition: border-color .15s; margin-bottom: 10px;
+  }
+  .candidate-row:hover { border-color: var(--blue); }
+  .candidate-row.selected { border-color: var(--blue); }
+  .avatar { width: 40px; height: 40px; border-radius: 50%; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; flex-shrink: 0; }
+  .avatar-lg { width: 56px; height: 56px; font-size: 18px; margin: 0 auto 10px; }
+  .cand-info { flex: 1; }
+  .cand-name { font-weight: 600; color: var(--navy); font-size: 14px; }
+  .cand-role { font-size: 12px; color: var(--gray); }
+  .cand-score { text-align: right; }
+  .score-num { font-size: 13px; font-weight: 600; color: var(--navy); }
+  .score-num span { font-size: 10px; color: var(--gray-light); }
+  .detail-panel { background: var(--white); border-radius: var(--radius-lg); padding: 20px; border: 1px solid var(--border); position: sticky; top: 20px; }
+  .detail-center { text-align: center; margin-bottom: 16px; }
+  .detail-name { font-weight: 700; color: var(--navy); font-size: 15px; }
+  .detail-role { font-size: 13px; color: var(--gray); }
+  .detail-meta { font-size: 13px; color: var(--gray); margin-bottom: 14px; }
+  .detail-meta div { margin-bottom: 6px; }
+  .notes-box { background: var(--gray-bg); border-radius: 10px; padding: 12px; }
+  .notes-box-label { font-size: 11px; font-weight: 600; color: var(--gray); margin-bottom: 6px; text-transform: uppercase; letter-spacing: .04em; }
+  .notes-textarea { width: 100%; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px 10px; font-size: 12px; font-family: inherit; resize: vertical; min-height: 70px; outline: none; color: var(--text); background: var(--white); }
+  .detail-empty { background: var(--gray-bg); border-radius: var(--radius-lg); padding: 28px 20px; text-align: center; color: var(--gray-light); font-size: 13px; }
+  .detail-empty .big { font-size: 30px; margin-bottom: 8px; }
+
+  /* PIPELINE / KANBAN */
+  .kanban { display: grid; grid-template-columns: repeat(4,1fr); gap: 14px; }
+  .kanban-col {
+    background: var(--gray-bg); border-radius: var(--radius-lg); padding: 14px;
+    min-height: 300px; border: 2px dashed #e2e8f0; transition: all .15s;
+  }
+  .kanban-col.drag-over { background: #eff6ff; border-color: var(--blue); }
+  .kanban-col-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+  .kanban-col-label { font-size: 13px; font-weight: 600; color: var(--text); }
+  .kanban-count { color: #fff; border-radius: 99px; font-size: 11px; font-weight: 700; padding: 2px 8px; }
+  .kanban-card {
+    background: var(--white); border-radius: 12px; padding: 12px 14px; margin-bottom: 10px;
+    box-shadow: var(--shadow); cursor: grab; transition: opacity .15s;
+    border-left: 3px solid transparent;
+  }
+  .kanban-card:active { cursor: grabbing; opacity: .5; }
+  .kanban-card-inner { display: flex; align-items: center; gap: 8px; }
+  .kanban-card-meta { margin-top: 8px; display: flex; justify-content: flex-end; }
+  .kanban-card-score { font-size: 11px; font-weight: 600; color: var(--gray); }
+
+  /* ANALYTICS */
+  .analytics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .progress-row { margin-bottom: 14px; }
+  .progress-label { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 5px; }
+  .progress-label .name { color: var(--text); font-weight: 500; }
+  .progress-label .count { color: var(--gray); }
+  .progress-track { height: 10px; background: var(--gray-bg); border-radius: 99px; overflow: hidden; }
+  .progress-fill { height: 100%; border-radius: 99px; transition: width .5s; }
+  .dept-row { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+  .dept-rank { width: 24px; height: 24px; border-radius: 50%; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+  .dept-info { flex: 1; }
+  .dept-name { font-size: 13px; font-weight: 500; color: var(--navy); }
+  .dept-sub { font-size: 11px; color: var(--gray-light); }
+  .dept-count { font-size: 13px; font-weight: 600; color: var(--navy); }
+  .histogram { display: flex; gap: 8px; align-items: flex-end; height: 100px; margin-top: 8px; }
+  .hist-bar-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .hist-count { font-size: 10px; color: var(--gray); min-height: 14px; }
+  .hist-bar { width: 100%; border-radius: 4px 4px 0 0; background: var(--gray-bg); transition: height .5s; min-height: 4px; }
+  .hist-label { font-size: 10px; color: var(--gray-light); }
+  .full-col { grid-column: 1 / -1; }
+
+  /* NOTICES PAGE */
+  .notices-list { display: flex; flex-direction: column; gap: 12px; }
+  .notice-item { background: var(--white); border-radius: 14px; padding: 16px 20px; border: 1px solid var(--border); display: flex; gap: 14px; align-items: flex-start; }
+  .notice-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; margin-top: 4px; }
+  .notice-title { font-size: 14px; font-weight: 600; color: var(--navy); margin-bottom: 3px; }
+  .notice-desc { font-size: 13px; color: var(--gray); line-height: 1.5; }
+  .notice-time { font-size: 11px; color: var(--gray-light); margin-top: 5px; }
+
+  /* FUNNEL */
+  .funnel-row { margin-bottom: 14px; }
+  .funnel-label-row { display: flex; justify-content: space-between; font-size: 13px; color: var(--text); margin-bottom: 5px; }
+  .funnel-label { font-weight: 500; }
+  .funnel-track { height: 10px; background: var(--gray-bg); border-radius: 99px; }
+  .funnel-fill { height: 100%; border-radius: 99px; transition: width .6s; }
+
+  /* TABLE */
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  thead tr { border-bottom: 1px solid var(--gray-bg); }
+  th { text-align: left; padding: 8px 12px; color: var(--gray); font-weight: 500; }
+  tbody tr { border-bottom: 1px solid #f8fafc; }
+  td { padding: 10px 12px; }
+  .td-title { font-weight: 500; color: var(--navy); }
+  .td-muted { color: var(--gray); }
+  .td-count { font-weight: 500; color: var(--navy); }
+
+  /* MODAL */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,.4); z-index: 1000;
+    display: none; align-items: center; justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal-box {
+    background: var(--white); border-radius: 18px; padding: 28px; width: 420px;
+    max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,.2);
+  }
+  .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+  .modal-title { font-size: 17px; font-weight: 700; color: var(--navy); }
+  .modal-close { background: none; border: none; font-size: 20px; cursor: pointer; color: var(--gray-light); line-height: 1; }
+  label.field-label { font-size: 12px; font-weight: 600; color: var(--text); display: block; margin-bottom: 5px; }
+  input.field, select.field, textarea.field {
+    width: 100%; padding: 9px 12px; border: 1px solid #e2e8f0; border-radius: 10px;
+    font-size: 13px; font-family: inherit; margin-bottom: 14px; outline: none;
+    background: var(--white); color: var(--navy);
+  }
+  input.field:focus, select.field:focus, textarea.field:focus { border-color: var(--blue); }
+  textarea.field { resize: vertical; }
+  input[type=range] { width: 100%; margin-bottom: 14px; accent-color: var(--orange); }
+
+  /* SETTINGS PAGE */
+  .settings-section { margin-bottom: 28px; }
+  .settings-section h2 { font-size: 15px; font-weight: 600; color: var(--navy); margin-bottom: 14px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+  .settings-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--gray-bg); }
+  .settings-row:last-child { border-bottom: none; }
+  .settings-label { font-size: 14px; color: var(--navy); font-weight: 500; }
+  .settings-sub { font-size: 12px; color: var(--gray); margin-top: 2px; }
+  .toggle { width: 40px; height: 22px; background: var(--gray-bg); border-radius: 99px; border: none; cursor: pointer; position: relative; transition: background .2s; flex-shrink: 0; }
+  .toggle.on { background: var(--green); }
+  .toggle::after { content: ''; position: absolute; width: 16px; height: 16px; background: #fff; border-radius: 50%; top: 3px; left: 3px; transition: left .2s; }
+  .toggle.on::after { left: 21px; }
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside id="sidebar">
+  <div class="sidebar-logo">
+    <div class="title">THD <span>HR</span></div>
+    <div class="sub">Control Center</div>
+  </div>
+  <nav>
+    <button class="nav-btn active" data-page="dashboard"><span class="icon">📊</span> Dashboard</button>
+    <button class="nav-btn" data-page="jobs"><span class="icon">💼</span> Jobs</button>
+    <button class="nav-btn" data-page="candidates"><span class="icon">👥</span> Candidates</button>
+    <button class="nav-btn" data-page="pipeline"><span class="icon">🔄</span> Pipeline</button>
+    <button class="nav-btn" data-page="analytics"><span class="icon">📈</span> Analytics</button>
+    <button class="nav-btn" data-page="notices"><span class="icon">🔔</span> Notices</button>
+    <button class="nav-btn" data-page="settings"><span class="icon">⚙️</span> Settings</button>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="sf-label">THD HR System v1.0</div>
+    <div class="sf-version">Student Project · SS 2025</div>
+  </div>
+</aside>
+
+<!-- MAIN CONTENT -->
+<main id="main">
+
+  <!-- DASHBOARD -->
+  <section class="page active" id="page-dashboard">
+    <h1>Dashboard</h1>
+    <p class="page-sub">Welcome back, HR Administrator — here is today's overview.</p>
+    <div class="stats-row" id="dash-stats"></div>
+    <div class="card" style="margin-bottom:24px">
+      <div style="font-size:15px;font-weight:600;color:var(--navy);margin-bottom:18px">Recruitment Funnel</div>
+      <div id="dash-funnel"></div>
+    </div>
+    <div class="card">
+      <div style="font-size:15px;font-weight:600;color:var(--navy);margin-bottom:16px">Recent Job Postings</div>
+      <table>
+        <thead><tr><th>Position</th><th>Department</th><th>Status</th><th>Applicants</th><th>Posted</th></tr></thead>
+        <tbody id="dash-table"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- JOBS -->
+  <section class="page" id="page-jobs">
+    <div class="section-header">
+      <div>
+        <h1>Job Postings</h1>
+        <p class="page-sub" style="margin-bottom:0" id="jobs-sub"></p>
+      </div>
+      <button class="btn btn-orange" onclick="openJobModal()">+ New Job</button>
+    </div>
+    <div class="filter-row" id="jobs-filter"></div>
+    <div class="jobs-grid" id="jobs-grid"></div>
+  </section>
+
+  <!-- CANDIDATES -->
+  <section class="page" id="page-candidates">
+    <div class="candidates-layout">
+      <div class="candidates-list">
+        <div class="section-header">
+          <div>
+            <h1>Candidates</h1>
+            <p class="page-sub" style="margin-bottom:0" id="cands-sub"></p>
+          </div>
+          <button class="btn btn-orange" onclick="openCandModal()">+ Add Candidate</button>
+        </div>
+        <input class="search-input" id="cand-search" placeholder="Search by name or role..." oninput="renderCandidates()">
+        <div id="cands-list"></div>
+      </div>
+      <div class="candidates-detail" id="cand-detail">
+        <div class="detail-empty">
+          <div class="big">👤</div>
+          Select a candidate to view their details
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PIPELINE -->
+  <section class="page" id="page-pipeline">
+    <h1>Recruitment Pipeline</h1>
+    <p class="page-sub">Drag and drop candidates between stages to update their status.</p>
+    <div class="kanban" id="kanban-board"></div>
+  </section>
+
+  <!-- ANALYTICS -->
+  <section class="page" id="page-analytics">
+    <h1>Analytics</h1>
+    <p class="page-sub">Recruitment performance and pipeline overview.</p>
+    <div class="stats-row" id="analytics-stats"></div>
+    <div class="analytics-grid" id="analytics-grid"></div>
+  </section>
+
+  <!-- NOTICES -->
+  <section class="page" id="page-notices">
+    <h1>Notices</h1>
+    <p class="page-sub">Recent activity and status updates.</p>
+    <div class="notices-list" id="notices-list"></div>
+  </section>
+
+  <!-- SETTINGS -->
+  <section class="page" id="page-settings">
+    <h1>Settings</h1>
+    <p class="page-sub">Configure your HR system preferences.</p>
+    <div class="card">
+      <div class="settings-section">
+        <h2>General</h2>
+        <div class="settings-row">
+          <div><div class="settings-label">University Name</div><div class="settings-sub">Shown in reports and exports</div></div>
+          <input class="field" style="width:220px;margin:0" value="Technische Hochschule Deggendorf">
+        </div>
+        <div class="settings-row">
+          <div><div class="settings-label">HR Contact Email</div><div class="settings-sub">Used for application confirmations</div></div>
+          <input class="field" style="width:220px;margin:0" value="hr@thd.de">
+        </div>
+        <div class="settings-row">
+          <div><div class="settings-label">Default Job Status</div><div class="settings-sub">Status assigned when a new job is created</div></div>
+          <select class="field" style="width:130px;margin:0"><option>Draft</option><option>Review</option></select>
+        </div>
+      </div>
+      <div class="settings-section">
+        <h2>Notifications</h2>
+        <div class="settings-row">
+          <div><div class="settings-label">New Application Alert</div><div class="settings-sub">Notify when a candidate applies</div></div>
+          <button class="toggle on" onclick="this.classList.toggle('on')"></button>
+        </div>
+        <div class="settings-row">
+          <div><div class="settings-label">Stage Change Alert</div><div class="settings-sub">Notify when a candidate moves stages</div></div>
+          <button class="toggle" onclick="this.classList.toggle('on')"></button>
+        </div>
+        <div class="settings-row">
+          <div><div class="settings-label">Weekly Summary Email</div><div class="settings-sub">Send a weekly recruitment digest</div></div>
+          <button class="toggle on" onclick="this.classList.toggle('on')"></button>
+        </div>
+      </div>
+      <div class="settings-section">
+        <h2>Data</h2>
+        <div class="settings-row">
+          <div><div class="settings-label">Export All Jobs</div><div class="settings-sub">Download as CSV</div></div>
+          <button class="btn btn-blue btn-sm" onclick="exportJobs()">Export CSV</button>
+        </div>
+        <div class="settings-row">
+          <div><div class="settings-label">Export All Candidates</div><div class="settings-sub">Download as CSV</div></div>
+          <button class="btn btn-blue btn-sm" onclick="exportCandidates()">Export CSV</button>
+        </div>
+        <div class="settings-row">
+          <div><div class="settings-label">Reset Sample Data</div><div class="settings-sub">Restore original demo data</div></div>
+          <button class="btn btn-sm" style="background:var(--red)" onclick="resetData()">Reset</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!-- JOB MODAL -->
+<div class="modal-overlay" id="job-modal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <span class="modal-title" id="job-modal-title">Create New Job</span>
+      <button class="modal-close" onclick="closeModal('job-modal')">✕</button>
+    </div>
+    <label class="field-label">Job Title *</label>
+    <input class="field" id="jf-title" placeholder="e.g. Student Assistant – IT Support">
+    <label class="field-label">Department *</label>
+    <input class="field" id="jf-dept" placeholder="e.g. Computer Science">
+    <label class="field-label">Status</label>
+    <select class="field" id="jf-status">
+      <option>Draft</option>
+      <option>Review</option>
+      <option>Published</option>
+    </select>
+    <label class="field-label">Job Description</label>
+    <textarea class="field" id="jf-desc" rows="4" placeholder="Describe the role and responsibilities..."></textarea>
+    <button class="btn btn-orange btn-full" onclick="saveJob()">Save Job</button>
+  </div>
+</div>
+
+<!-- CANDIDATE MODAL -->
+<div class="modal-overlay" id="cand-modal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <span class="modal-title">Add Candidate</span>
+      <button class="modal-close" onclick="closeModal('cand-modal')">✕</button>
+    </div>
+    <label class="field-label">Full Name *</label>
+    <input class="field" id="cf-name" placeholder="e.g. Maria Müller">
+    <label class="field-label">Role Applied For *</label>
+    <input class="field" id="cf-role" placeholder="e.g. IT Support">
+    <label class="field-label">Email Address</label>
+    <input class="field" id="cf-email" placeholder="e.g. m.mueller@thd.de">
+    <label class="field-label">Stage</label>
+    <select class="field" id="cf-stage">
+      <option value="new">New Applications</option>
+      <option value="review">Under Review</option>
+      <option value="interview">Interview</option>
+      <option value="hired">Hired</option>
+    </select>
+    <label class="field-label">Score: <span id="score-display">70</span> / 100</label>
+    <input type="range" min="0" max="100" step="1" value="70" id="cf-score"
+           oninput="document.getElementById('score-display').textContent=this.value">
+    <button class="btn btn-orange btn-full" onclick="saveCandidate()">Add Candidate</button>
+  </div>
+</div>
+
+<script>
+// =============================================================================
+// DATA
+// =============================================================================
+
+var SEED_JOBS = [
+  { id: 1, title: "Student Assistant – IT Support", dept: "IT Services", status: "Published", applicants: 12, created: "2025-04-10", desc: "Support students and staff with hardware and software issues on campus." },
+  { id: 2, title: "Research Assistant", dept: "AI Research Lab", status: "Review", applicants: 9, created: "2025-04-14", desc: "Assist professors with research experiments, data collection and documentation." },
+  { id: 3, title: "Marketing Student Worker", dept: "Marketing", status: "Published", applicants: 21, created: "2025-04-18", desc: "Create content for social media channels and support internal campaigns." },
+  { id: 4, title: "Library Assistant", dept: "University Library", status: "Draft", applicants: 0, created: "2025-05-01", desc: "Help students find academic resources and manage the catalogue system." },
+];
+
+var SEED_CANDIDATES = [
+  { id: "c1", name: "Anna Schmidt",  role: "Frontend Developer",    stage: "new",       score: 82, applied: "2025-05-02", email: "a.schmidt@thd.de",  notes: "" },
+  { id: "c2", name: "John Miller",   role: "Research Assistant",    stage: "new",       score: 75, applied: "2025-05-03", email: "j.miller@thd.de",   notes: "" },
+  { id: "c3", name: "Lisa Wagner",   role: "UI/UX Designer",        stage: "review",    score: 90, applied: "2025-04-28", email: "l.wagner@thd.de",   notes: "" },
+  { id: "c4", name: "David Brown",   role: "IT Support",            stage: "interview", score: 88, applied: "2025-04-20", email: "d.brown@thd.de",    notes: "" },
+  { id: "c5", name: "Emma Fischer",  role: "Marketing Assistant",   stage: "hired",     score: 95, applied: "2025-04-15", email: "e.fischer@thd.de",  notes: "" },
+  { id: "c6", name: "Max Huber",     role: "IT Support",            stage: "review",    score: 70, applied: "2025-05-05", email: "m.huber@thd.de",    notes: "" },
+];
+
+var jobs = JSON.parse(JSON.stringify(SEED_JOBS));
+var candidates = JSON.parse(JSON.stringify(SEED_CANDIDATES));
+
+var STAGES = ["new", "review", "interview", "hired"];
+var STAGE_LABELS = { new: "New Applications", review: "Under Review", interview: "Interview", hired: "Hired" };
+var STAGE_COLORS = { new: "#3b82f6", review: "#f59e0b", interview: "#8b5cf6", hired: "#10b981" };
+
+var editJobId = null;
+var selectedCandId = null;
+var jobFilter = "All";
+var dragId = null;
+
+// =============================================================================
+// HELPERS
+// =============================================================================
+
+function getInitials(name) {
+  return name.split(" ").map(function(w) { return w[0]; }).join("").slice(0, 2).toUpperCase();
+}
+
+var AVATAR_COLORS = ["#3b82f6", "#8b5cf6", "#10b981", "#f59e0b", "#ef4444", "#ec4899"];
+function getAvatarColor(name) {
+  return AVATAR_COLORS[name.charCodeAt(0) % AVATAR_COLORS.length];
+}
+
+function getStatusBadge(status) {
+  if (status === "Published") return "badge-green";
+  if (status === "Review")    return "badge-yellow";
+  return "badge-gray";
+}
+
+function getStatusBorderColor(status) {
+  if (status === "Published") return "#10b981";
+  if (status === "Review")    return "#f59e0b";
+  return "#94a3b8";
+}
+
+function getStageBadge(stage) {
+  var map = { new: "badge-blue", review: "badge-amber", interview: "badge-purple", hired: "badge-emerald" };
+  return map[stage] || "badge-gray";
+}
+
+var RANK_COLORS = ["#3b82f6", "#8b5cf6", "#f59e0b", "#10b981", "#ef4444"];
+
+// =============================================================================
+// NAVIGATION
+// =============================================================================
+
+document.querySelectorAll(".nav-btn").forEach(function(btn) {
+  btn.addEventListener("click", function() {
+    document.querySelectorAll(".nav-btn").forEach(function(b) { b.classList.remove("active"); });
+    document.querySelectorAll(".page").forEach(function(p) { p.classList.remove("active"); });
+    btn.classList.add("active");
+    var page = btn.dataset.page;
+    document.getElementById("page-" + page).classList.add("active");
+    if (page === "dashboard")  renderDashboard();
+    if (page === "jobs")       renderJobs();
+    if (page === "candidates") renderCandidates();
+    if (page === "pipeline")   renderPipeline();
+    if (page === "analytics")  renderAnalytics();
+    if (page === "notices")    renderNotices();
+  });
+});
+
+// =============================================================================
+// DASHBOARD
+// =============================================================================
+
+function renderDashboard() {
+  var hired      = candidates.filter(function(c) { return c.stage === "hired"; }).length;
+  var interviews = candidates.filter(function(c) { return c.stage === "interview"; }).length;
+  var published  = jobs.filter(function(j) { return j.status === "Published"; }).length;
+
+  var statsData = [
+    { label: "Open Positions",    value: published,          icon: "💼", color: "#3b82f6", sub: jobs.length + " total postings" },
+    { label: "Total Applicants",  value: candidates.length,  icon: "👥", color: "#8b5cf6", sub: "Across all stages" },
+    { label: "Interviews",        value: interviews,          icon: "📅", color: "#f59e0b", sub: "Currently scheduled" },
+    { label: "Successful Hires",  value: hired,              icon: "✅", color: "#10b981", sub: "This recruitment cycle" },
+  ];
+
+  document.getElementById("dash-stats").innerHTML = statsData.map(function(s) {
+    return '<div class="stat-card" style="border-top:3px solid ' + s.color + '">' +
+      '<div class="inner">' +
+        '<div>' +
+          '<div class="label">' + s.label + '</div>' +
+          '<div class="value">' + s.value + '</div>' +
+          '<div class="sub-text">' + s.sub + '</div>' +
+        '</div>' +
+        '<div class="emoji">' + s.icon + '</div>' +
+      '</div>' +
+    '</div>';
+  }).join("");
+
+  var maxCount = Math.max.apply(null, STAGES.map(function(s) {
+    return candidates.filter(function(c) { return c.stage === s; }).length;
+  }).concat([1]));
+
+  document.getElementById("dash-funnel").innerHTML = STAGES.map(function(s) {
+    var cnt = candidates.filter(function(c) { return c.stage === s; }).length;
+    var pct = (cnt / maxCount) * 100;
+    return '<div class="funnel-row">' +
+      '<div class="funnel-label-row">' +
+        '<span class="funnel-label">' + STAGE_LABELS[s] + '</span>' +
+        '<span>' + cnt + ' candidates</span>' +
+      '</div>' +
+      '<div class="funnel-track">' +
+        '<div class="funnel-fill" style="width:' + pct + '%;background:' + STAGE_COLORS[s] + '"></div>' +
+      '</div>' +
+    '</div>';
+  }).join("");
+
+  document.getElementById("dash-table").innerHTML = jobs.slice(0, 5).map(function(j) {
+    return '<tr>' +
+      '<td class="td-title">' + j.title + '</td>' +
+      '<td class="td-muted">' + j.dept + '</td>' +
+      '<td><span class="badge ' + getStatusBadge(j.status) + '">' + j.status + '</span></td>' +
+      '<td class="td-count">' + j.applicants + '</td>' +
+      '<td class="td-muted">' + j.created + '</td>' +
+    '</tr>';
+  }).join("");
+}
+
+// =============================================================================
+// JOBS
+// =============================================================================
+
+function renderJobs() {
+  document.getElementById("jobs-sub").textContent = jobs.length + " total positions";
+
+  var filters = ["All", "Published", "Review", "Draft"];
+  document.getElementById("jobs-filter").innerHTML = filters.map(function(f) {
+    return '<button class="filter-btn ' + (jobFilter === f ? "active" : "") + '" onclick="setJobFilter(\'' + f + '\')">' + f + '</button>';
+  }).join("");
+
+  var filtered = jobFilter === "All" ? jobs : jobs.filter(function(j) { return j.status === jobFilter; });
+
+  document.getElementById("jobs-grid").innerHTML = filtered.map(function(j) {
+    return '<div class="job-card" style="border-left-color:' + getStatusBorderColor(j.status) + '">' +
+      '<div class="jc-top">' +
+        '<div class="jc-title">' + j.title + '</div>' +
+        '<span class="badge ' + getStatusBadge(j.status) + '">' + j.status + '</span>' +
+      '</div>' +
+      '<div class="jc-dept">🏢 ' + j.dept + '</div>' +
+      (j.desc ? '<div class="jc-desc">' + j.desc + '</div>' : '') +
+      '<div class="jc-footer">' +
+        '<div>' +
+          '<span class="jc-count">👥 ' + j.applicants + ' applicants</span>' +
+          '<div class="jc-date">Posted: ' + j.created + '</div>' +
+        '</div>' +
+        '<div class="jc-actions">' +
+          '<button class="icon-btn" title="Edit" onclick="openEditJob(' + j.id + ')">✏️</button>' +
+          '<button class="icon-btn" title="Delete" onclick="deleteJob(' + j.id + ')">🗑️</button>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+  }).join("");
+}
+
+function setJobFilter(f) {
+  jobFilter = f;
+  renderJobs();
+}
+
+function openJobModal() {
+  editJobId = null;
+  document.getElementById("job-modal-title").textContent = "Create New Job";
+  document.getElementById("jf-title").value = "";
+  document.getElementById("jf-dept").value = "";
+  document.getElementById("jf-status").value = "Draft";
+  document.getElementById("jf-desc").value = "";
+  document.getElementById("job-modal").classList.add("open");
+}
+
+function openEditJob(id) {
+  var j = jobs.find(function(j) { return j.id === id; });
+  editJobId = id;
+  document.getElementById("job-modal-title").textContent = "Edit Job";
+  document.getElementById("jf-title").value = j.title;
+  document.getElementById("jf-dept").value = j.dept;
+  document.getElementById("jf-status").value = j.status;
+  document.getElementById("jf-desc").value = j.desc || "";
+  document.getElementById("job-modal").classList.add("open");
+}
+
+function saveJob() {
+  var title = document.getElementById("jf-title").value.trim();
+  var dept  = document.getElementById("jf-dept").value.trim();
+  if (!title || !dept) { alert("Please fill in the required fields."); return; }
+  var status = document.getElementById("jf-status").value;
+  var desc   = document.getElementById("jf-desc").value.trim();
+
+  if (editJobId) {
+    jobs = jobs.map(function(j) {
+      return j.id === editJobId ? Object.assign({}, j, { title: title, dept: dept, status: status, desc: desc }) : j;
+    });
+  } else {
+    jobs.push({
+      id: Date.now(), title: title, dept: dept, status: status, desc: desc,
+      applicants: 0, created: new Date().toISOString().slice(0, 10)
+    });
+  }
+  closeModal("job-modal");
+  renderJobs();
+  renderDashboard();
+}
+
+function deleteJob(id) {
+  if (!confirm("Delete this job posting?")) return;
+  jobs = jobs.filter(function(j) { return j.id !== id; });
+  renderJobs();
+  renderDashboard();
+}
+
+// =============================================================================
+// CANDIDATES
+// =============================================================================
+
+function renderCandidates() {
+  document.getElementById("cands-sub").textContent = candidates.length + " total applicants";
+  var q = document.getElementById("cand-search").value.toLowerCase();
+  var filtered = candidates.filter(function(c) {
+    return c.name.toLowerCase().indexOf(q) !== -1 || c.role.toLowerCase().indexOf(q) !== -1;
+  });
+
+  document.getElementById("cands-list").innerHTML = filtered.map(function(c) {
+    return '<div class="candidate-row ' + (selectedCandId === c.id ? "selected" : "") + '" onclick="selectCandidate(\'' + c.id + '\')">' +
+      '<div class="avatar" style="background:' + getAvatarColor(c.name) + '">' + getInitials(c.name) + '</div>' +
+      '<div class="cand-info">' +
+        '<div class="cand-name">' + c.name + '</div>' +
+        '<div class="cand-role">' + c.role + '</div>' +
+      '</div>' +
+      '<div class="cand-score">' +
+        '<div class="score-num">' + c.score + '<span>/100</span></div>' +
+        '<span class="badge ' + getStageBadge(c.stage) + '">' + STAGE_LABELS[c.stage] + '</span>' +
+      '</div>' +
+      '<button class="icon-btn" title="Delete" onclick="deleteCandidate(event,\'' + c.id + '\')">🗑️</button>' +
+    '</div>';
+  }).join("");
+}
+
+function selectCandidate(id) {
+  selectedCandId = id;
+  renderCandidates();
+
+  var c = candidates.find(function(c) { return c.id === id; });
+  var detail = document.getElementById("cand-detail");
+  detail.innerHTML =
+    '<div class="detail-panel">' +
+      '<div class="detail-center">' +
+        '<div class="avatar avatar-lg" style="background:' + getAvatarColor(c.name) + '">' + getInitials(c.name) + '</div>' +
+        '<div class="detail-name">' + c.name + '</div>' +
+        '<div class="detail-role">' + c.role + '</div>' +
+      '</div>' +
+      '<div class="detail-meta">' +
+        '<div>📧 ' + (c.email || '—') + '</div>' +
+        '<div>📅 Applied: ' + c.applied + '</div>' +
+        '<div>📊 Stage: <span class="badge ' + getStageBadge(c.stage) + '">' + STAGE_LABELS[c.stage] + '</span></div>' +
+        '<div>⭐ Score: <strong>' + c.score + ' / 100</strong></div>' +
+      '</div>' +
+      '<div class="notes-box">' +
+        '<div class="notes-box-label">Recruiter Notes</div>' +
+        '<textarea class="notes-textarea" id="notes-' + c.id + '" placeholder="Add notes about this candidate..." onblur="saveNote(\'' + c.id + '\')">' + (c.notes || '') + '</textarea>' +
+      '</div>' +
+    '</div>';
+}
+
+function saveNote(id) {
+  var val = document.getElementById("notes-" + id);
+  if (!val) return;
+  candidates = candidates.map(function(c) {
+    return c.id === id ? Object.assign({}, c, { notes: val.value }) : c;
+  });
+}
+
+function deleteCandidate(e, id) {
+  e.stopPropagation();
+  if (!confirm("Remove this candidate?")) return;
+  candidates = candidates.filter(function(c) { return c.id !== id; });
+  if (selectedCandId === id) {
+    selectedCandId = null;
+    document.getElementById("cand-detail").innerHTML =
+      '<div class="detail-empty"><div class="big">👤</div>Select a candidate to view their details</div>';
+  }
+  renderCandidates();
+}
+
+function openCandModal() {
+  document.getElementById("cf-name").value = "";
+  document.getElementById("cf-role").value = "";
+  document.getElementById("cf-email").value = "";
+  document.getElementById("cf-stage").value = "new";
+  document.getElementById("cf-score").value = 70;
+  document.getElementById("score-display").textContent = "70";
+  document.getElementById("cand-modal").classList.add("open");
+}
+
+function saveCandidate() {
+  var name = document.getElementById("cf-name").value.trim();
+  var role = document.getElementById("cf-role").value.trim();
+  if (!name || !role) { alert("Please fill in the required fields."); return; }
+  candidates.push({
+    id: "c" + Date.now(),
+    name:  name,
+    role:  role,
+    email: document.getElementById("cf-email").value.trim(),
+    stage: document.getElementById("cf-stage").value,
+    score: parseInt(document.getElementById("cf-score").value),
+    applied: new Date().toISOString().slice(0, 10),
+    notes: ""
+  });
+  closeModal("cand-modal");
+  renderCandidates();
+}
+
+// =============================================================================
+// PIPELINE (KANBAN)
+// =============================================================================
+
+function renderPipeline() {
+  document.getElementById("kanban-board").innerHTML = STAGES.map(function(stage) {
+    var cols = candidates.filter(function(c) { return c.stage === stage; });
+    var cards = cols.map(function(c) {
+      return '<div class="kanban-card" draggable="true" data-id="' + c.id + '" style="border-left-color:' + STAGE_COLORS[stage] + '"' +
+        ' ondragstart="dragStart(event)" ondragend="dragEnd(event)">' +
+        '<div class="kanban-card-inner">' +
+          '<div class="avatar" style="background:' + getAvatarColor(c.name) + ';width:32px;height:32px;font-size:12px">' + getInitials(c.name) + '</div>' +
+          '<div>' +
+            '<div style="font-size:13px;font-weight:600;color:var(--navy)">' + c.name + '</div>' +
+            '<div style="font-size:11px;color:var(--gray)">' + c.role + '</div>' +
+          '</div>' +
+        '</div>' +
+        '<div class="kanban-card-meta"><span class="kanban-card-score">Score: ' + c.score + '</span></div>' +
+      '</div>';
+    }).join("");
+
+    return '<div class="kanban-col" data-stage="' + stage + '"' +
+      ' ondragover="dragOver(event)" ondrop="dropOn(event,\'' + stage + '\')" ondragleave="dragLeave(event)">' +
+      '<div class="kanban-col-header">' +
+        '<span class="kanban-col-label">' + STAGE_LABELS[stage] + '</span>' +
+        '<span class="kanban-count" style="background:' + STAGE_COLORS[stage] + '">' + cols.length + '</span>' +
+      '</div>' +
+      cards +
+    '</div>';
+  }).join("");
+}
+
+function dragStart(e) {
+  dragId = e.currentTarget.dataset.id;
+  setTimeout(function() { e.currentTarget.style.opacity = "0.4"; }, 0);
+}
+
+function dragEnd(e) {
+  e.currentTarget.style.opacity = "1";
+  dragId = null;
+  document.querySelectorAll(".kanban-col").forEach(function(c) { c.classList.remove("drag-over"); });
+}
+
+function dragOver(e) {
+  e.preventDefault();
+  e.currentTarget.classList.add("drag-over");
+}
+
+function dragLeave(e) {
+  e.currentTarget.classList.remove("drag-over");
+}
+
+function dropOn(e, stage) {
+  e.preventDefault();
+  e.currentTarget.classList.remove("drag-over");
+  if (!dragId) return;
+  candidates = candidates.map(function(c) {
+    return c.id === dragId ? Object.assign({}, c, { stage: stage }) : c;
+  });
+  dragId = null;
+  renderPipeline();
+}
+
+// =============================================================================
+// ANALYTICS
+// =============================================================================
+
+function renderAnalytics() {
+  var total  = candidates.length || 1;
+  var hired  = candidates.filter(function(c) { return c.stage === "hired"; }).length;
+  var avgScore = candidates.length
+    ? Math.round(candidates.reduce(function(a, c) { return a + c.score; }, 0) / candidates.length)
+    : 0;
+  var depts = [];
+  jobs.forEach(function(j) { if (depts.indexOf(j.dept) === -1) depts.push(j.dept); });
+
+  var statsData = [
+    { label: "Avg. Candidate Score", value: avgScore,  icon: "⭐", color: "#f59e0b", sub: "Out of 100" },
+    { label: "Conversion Rate",      value: Math.round((hired / total) * 100) + "%", icon: "🎯", color: "#10b981", sub: "Applied to Hired" },
+    { label: "Active Departments",   value: depts.length, icon: "🏢", color: "#8b5cf6", sub: "Currently hiring" },
+  ];
+
+  document.getElementById("analytics-stats").innerHTML = statsData.map(function(s) {
+    return '<div class="stat-card" style="border-top:3px solid ' + s.color + '">' +
+      '<div class="inner">' +
+        '<div><div class="label">' + s.label + '</div><div class="value">' + s.value + '</div><div class="sub-text">' + s.sub + '</div></div>' +
+        '<div class="emoji">' + s.icon + '</div>' +
+      '</div>' +
+    '</div>';
+  }).join("");
+
+  var pipeline = STAGES.map(function(s) {
+    return { label: STAGE_LABELS[s], count: candidates.filter(function(c) { return c.stage === s; }).length, color: STAGE_COLORS[s] };
+  });
+
+  var topDepts = depts.map(function(d) {
+    return { dept: d, count: jobs.filter(function(j) { return j.dept === d; }).length };
+  }).sort(function(a, b) { return b.count - a.count; }).slice(0, 5);
+
+  var buckets = [0, 10, 20, 30, 40, 50, 60, 70, 80, 90];
+  var bucketCounts = buckets.map(function(b) {
+    return candidates.filter(function(c) { return c.score >= b && c.score < b + 10; }).length;
+  });
+  var maxH = Math.max.apply(null, bucketCounts.concat([1]));
+
+  var pipelineHtml = pipeline.map(function(s) {
+    var pct = (s.count / total) * 100;
+    return '<div class="progress-row">' +
+      '<div class="progress-label"><span class="name">' + s.label + '</span><span class="count">' + s.count + ' (' + Math.round(pct) + '%)</span></div>' +
+      '<div class="progress-track"><div class="progress-fill" style="width:' + pct + '%;background:' + s.color + '"></div></div>' +
+    '</div>';
+  }).join("");
+
+  var deptsHtml = topDepts.map(function(d, i) {
+    return '<div class="dept-row">' +
+      '<div class="dept-rank" style="background:' + RANK_COLORS[i] + '22;color:' + RANK_COLORS[i] + '">' + (i + 1) + '</div>' +
+      '<div class="dept-info"><div class="dept-name">' + d.dept + '</div><div class="dept-sub">' + d.count + ' posting' + (d.count !== 1 ? 's' : '') + '</div></div>' +
+      '<div class="dept-count">' + d.count + '</div>' +
+    '</div>';
+  }).join("");
+
+  var histHtml = buckets.map(function(b, i) {
+    var h = (bucketCounts[i] / maxH) * 80;
+    return '<div class="hist-bar-wrap">' +
+      '<div class="hist-count">' + (bucketCounts[i] > 0 ? bucketCounts[i] : '') + '</div>' +
+      '<div class="hist-bar" style="height:' + h + 'px;background:' + (bucketCounts[i] > 0 ? '#3b82f6' : 'var(--gray-bg)') + '"></div>' +
+      '<div class="hist-label">' + b + 's</div>' +
+    '</div>';
+  }).join("");
+
+  document.getElementById("analytics-grid").innerHTML =
+    '<div class="card">' +
+      '<div style="font-size:15px;font-weight:600;color:var(--navy);margin-bottom:18px">Pipeline Distribution</div>' +
+      pipelineHtml +
+    '</div>' +
+    '<div class="card">' +
+      '<div style="font-size:15px;font-weight:600;color:var(--navy);margin-bottom:18px">Jobs by Department</div>' +
+      deptsHtml +
+    '</div>' +
+    '<div class="card full-col">' +
+      '<div style="font-size:15px;font-weight:600;color:var(--navy);margin-bottom:8px">Candidate Score Distribution</div>' +
+      '<div class="histogram">' + histHtml + '</div>' +
+    '</div>';
+}
+
+// =============================================================================
+// NOTICES
+// =============================================================================
+
+function renderNotices() {
+  var notices = [
+    { title: "New application received",       desc: "Anna Schmidt applied for the Frontend Developer role.",              time: "Today, 09:14",     color: "#3b82f6" },
+    { title: "Candidate moved to Interview",   desc: "David Brown has been moved from Under Review to Interview stage.",  time: "Yesterday, 15:30", color: "#8b5cf6" },
+    { title: "Job posting published",          desc: "Student Assistant – IT Support is now live and accepting applications.", time: "Yesterday, 11:00", color: "#10b981" },
+    { title: "Candidate hired",                desc: "Emma Fischer has been successfully hired as Marketing Assistant.",   time: "2025-05-10",       color: "#10b981" },
+    { title: "Job posting under review",       desc: "Research Assistant posting has been submitted for department approval.", time: "2025-05-08",   color: "#f59e0b" },
+    { title: "New candidate added",            desc: "Max Huber was added to the IT Support applicant pool.",              time: "2025-05-05",       color: "#3b82f6" },
+  ];
+
+  document.getElementById("notices-list").innerHTML = notices.map(function(n) {
+    return '<div class="notice-item">' +
+      '<div class="notice-dot" style="background:' + n.color + '"></div>' +
+      '<div>' +
+        '<div class="notice-title">' + n.title + '</div>' +
+        '<div class="notice-desc">' + n.desc + '</div>' +
+        '<div class="notice-time">🕐 ' + n.time + '</div>' +
+      '</div>' +
+    '</div>';
+  }).join("");
+}
+
+// =============================================================================
+// SETTINGS ACTIONS
+// =============================================================================
+
+function exportCSV(data, filename) {
+  if (!data.length) { alert("No data to export."); return; }
+  var keys = Object.keys(data[0]);
+  var csv = keys.join(",") + "\n" + data.map(function(row) {
+    return keys.map(function(k) { return '"' + String(row[k]).replace(/"/g, '""') + '"'; }).join(",");
+  }).join("\n");
+  var blob = new Blob([csv], { type: "text/csv" });
+  var a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  a.click();
+}
+
+function exportJobs()       { exportCSV(jobs,       "thd_jobs.csv"); }
+function exportCandidates() { exportCSV(candidates, "thd_candidates.csv"); }
+
+function resetData() {
+  if (!confirm("Reset all data to the original sample data?")) return;
+  jobs = JSON.parse(JSON.stringify(SEED_JOBS));
+  candidates = JSON.parse(JSON.stringify(SEED_CANDIDATES));
+  selectedCandId = null;
+  jobFilter = "All";
+  renderDashboard();
+  alert("Data has been reset.");
+}
+
+// =============================================================================
+// MODAL HELPERS
+// =============================================================================
+
+function closeModal(id) {
+  document.getElementById(id).classList.remove("open");
+}
+
+window.addEventListener("click", function(e) {
+  if (e.target.classList.contains("modal-overlay")) {
+    e.target.classList.remove("open");
+  }
+});
+
+// =============================================================================
+// INIT
+// =============================================================================
+
+renderDashboard();
+</script>
+</body>
+</html>
