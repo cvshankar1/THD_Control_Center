@@ -1,6 +1,6 @@
 """
 THD HR Control Center — FastAPI Backend
-Technische Hochschule Deggendorf · Student Project SS 2025
+Technische Hochschule Deggendorf 
 
 Run:
     uvicorn main:app --reload --port 8000
